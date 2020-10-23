@@ -7,7 +7,7 @@ const {
 } = Telegraf
 require('dotenv').config()
 const bot = new Telegraf(process.env.bot_token)
-const SceneGenerator = require('./scenes')
+const SceneGenerator = require('./Scenes')
 const curScene = new SceneGenerator()
 const testScene = curScene.TestScene()
 
