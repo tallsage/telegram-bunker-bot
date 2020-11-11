@@ -58,28 +58,12 @@ bot.start((ctx) => {
                         text: 'да',
                         callback_data: 'answerStr'
                     },
-                    {
-                        text: 'нет',
-                        callback_data: 'answerNStr'
-                    }
                 ],
             ],
         }
     }, )
 })
 
-bot.action('answerNStr', (ctx) => {
-    bot.telegram.sendMessage(ctx.chat.id, 'Подумай еще раз, может пройдешь тест?', {
-        reply_markup: {
-            inline_keyboard: [
-                [{
-                    text: 'да',
-                    callback_data: 'answerStr'
-                }],
-            ],
-        }
-    })
-})
 
 bot.action('answerStr', async (ctx) => {
     bot.telegram.sendMessage(ctx.chat.id, await 'поехали!!!', ctx.scene.enter('test'))

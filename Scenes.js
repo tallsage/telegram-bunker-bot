@@ -1,6 +1,16 @@
 const Scene = require('telegraf/scenes/base')
 const Telegraf = require('telegraf')
 const bot = new Telegraf(process.env.bot_token)
+const MongoClient = require('mongodb').MongoClient;
+require('dotenv').config()
+const uri = process.env.uri
+const client = new MongoClient(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+const dbName = "test";
+
 
 var ask = {
     1: {
@@ -183,7 +193,7 @@ var ask = {
         vars: ['Совершенно удовлетворен ', 'Вполне удовлетворен', 'Не удовлетворен'],
         action_data: 'ans30'
     },
-}  //?масив вопросов
+} //?масив вопросов
 var askCallData = [
     'ans10', 'ans11', 'ans20', 'ans21', 'ans30', 'ans31', 'ans40', 'ans41', 'ans50', 'ans51', 'ans60', 'ans61', 'ans70', 'ans71', 'ans80', 'ans81', 'ans90', 'ans91',
     'ans100', 'ans101', 'ans110', 'ans111', 'ans120', 'ans121', 'ans130', 'ans131', 'ans140', 'ans141', 'ans150', 'ans151', 'ans160', 'ans161', 'ans170', 'ans171', 'ans180', 'ans181',
@@ -201,15 +211,51 @@ class SceneGenerator {
     TestScene() {
         const test = new Scene('test')
         test.enter((ctx) => {
+
+            var userId = ctx.update.callback_query.from.id;
+
             bot.telegram.sendMessage(ctx.chat.id, ask[bigCount].ques, inlineKeyboard(bigCount, smallCount)) //? выводит вопрос и коавиатуру
             test.action(askCallData, (ctx) => {
-                if ((ctx.match == ('ans300' || 'ans301' || 'ans302'))|| bigCount == 31|| counter == 7) {
-                    
-                    let trAns = 
-                        (counterPt2 >= 19 && counterPt2 <= 32)? bot.telegram.sendMessage(ctx.chat.id, 'Вы лев. РРРРРРРРР'):
-                        (counterPt2 >32 && counterPt2 < 48)? bot.telegram.sendMessage(ctx.chat.id, 'Вы Медведь. Сосите лапу'):
-                        (counterPt2 > 47 && counterPt2 < 62)? bot.telegram.sendMessage(ctx.chat.id, 'Вы волк. АУууууууф'):
-                        (counter ==7)? bot.telegram.sendMessage(ctx.chat.id, 'Вы дельфин. Тем самым дельфины доказали, что они самые умные существа на планете'): null;
+                if ((ctx.match == ('ans300' || 'ans301' || 'ans302')) || bigCount == 31 || counter == 7) {
+
+                    let trAns =
+                        (counterPt2 >= 19 && counterPt2 <= 32) ? (bot.telegram.sendMessage(ctx.chat.id, 'Вы лев. РРРРРРРРР'), 'lion') :
+                        (counterPt2 > 32 && counterPt2 < 48) ? (bot.telegram.sendMessage(ctx.chat.id, 'Вы Медведь. Сосите лапу'), 'bear') :
+                        (counterPt2 > 47 && counterPt2 < 62) ? (bot.telegram.sendMessage(ctx.chat.id, 'Вы волк. АУууууууф'), 'volf') :
+                        (counter == 7) ? (bot.telegram.sendMessage(ctx.chat.id, 'Вы дельфин. Тем самым дельфины доказали, что они самые умные существа на планете'), 'dolfine') : null;
+                    async function run() {
+                        try {
+                            await client.connect();
+                            console.log("Connected correctly to server");
+
+                            const db = client.db(dbName);
+                            const col = db.collection("users");
+                            var myDoc = await col.findOne({
+                                _id: `${userId}`
+                            });
+
+                            if (userId != myDoc) {
+                                let personDocument = {
+                                    "_id": `${userId}`,
+                                    "hronoType": `${trAns}`
+                                }
+                                const p = await col.insertOne(personDocument);
+                            } else {
+                                console.log('already done');
+                            }
+
+                        } catch (err) {
+                            console.log(err.stack);
+                        } finally {
+                            await client.close();
+                        }
+                    }
+                    run().catch(console.dir);
+
+
+
+
+
 
                     ctx.scene.leave()
                 } else {
@@ -218,19 +264,20 @@ class SceneGenerator {
                             counter += ask[bigCount].weight
                             // console.log('counter ' + counter + ' counterPt' + counterPt2)
                         }
-                    }   
-                    if(bigCount > 10){
+                    }
+                    if (bigCount > 10) {
                         // console.log(bigCount)
                         // console.log(ask[bigCount].weight[ctx.match[ctx.match.length - 1]])
                         counterPt2 += ask[bigCount].weight[ctx.match[ctx.match.length - 1]]
                         // console.log('counter ' + counter + ' counterPt' + counterPt2)
-                    }else{console.log('counter ' + counter + ' counterPt' + counterPt2)}
-                    ctx.scene.reenter()
+                    } else { //console.log('counter ' + counter + ' counterPt' + counterPt2)
+                    }
+                    ctx.scene.reenter();
                 }
 
-            //*этот огромный test.action принимает колбек дату , смотрит не последний ли это вопрос(если это так, то говорит какой ты зверь),  затем стоит контрукция ифов которая
-            //* прибавляет нужным счетчикам значения весов, чтобы определить  какой ты зверь) мб эта конструкция карявая и при желании можно переписать 
-                
+                //*этот огромный test.action принимает колбек дату , смотрит не последний ли это вопрос(если это так, то говорит какой ты зверь),  затем стоит контрукция ифов которая
+                //* прибавляет нужным счетчикам значения весов, чтобы определить  какой ты зверь) мб эта конструкция карявая и при желании можно переписать 
+
             })
         })
         return test
