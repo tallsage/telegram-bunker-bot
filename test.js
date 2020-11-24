@@ -8,6 +8,7 @@ const {
 require('dotenv').config()
 const bot = new Telegraf(process.env.bot_token)
 const SceneGenerator = require('./Scenes')
+// const SceneGenerator = require('./newSc')
 const curScene = new SceneGenerator()
 const testScene = curScene.TestScene()
 const MongoClient = require('mongodb').MongoClient;
